@@ -1,0 +1,79 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "win64",
+      "displayName": "Windows x86_64 (MSVC / clang-cl)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/win64",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux64",
+      "displayName": "Linux x86_64 (Native GCC / g++)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux64",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc-14",
+        "CMAKE_CXX_COMPILER": "g++-14",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-arm64",
+      "displayName": "Linux ARM64 (.so via Zig)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-arm64",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Linux",
+        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_C_COMPILER": "zig",
+        "CMAKE_C_COMPILER_ARG1": "cc",
+        "CMAKE_CXX_COMPILER": "zig",
+        "CMAKE_CXX_COMPILER_ARG1": "c++",
+        "CMAKE_C_COMPILER_TARGET": "aarch64-linux-gnu.2.31",
+        "CMAKE_CXX_COMPILER_TARGET": "aarch64-linux-gnu.2.31",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "macos-universal",
+      "displayName": "macOS Universal (.dylib via Zig)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Darwin",
+        "CMAKE_C_COMPILER": "zig",
+        "CMAKE_C_COMPILER_ARG1": "cc",
+        "CMAKE_CXX_COMPILER": "zig",
+        "CMAKE_CXX_COMPILER_ARG1": "c++",
+        "CMAKE_C_FLAGS": "-target x86_64-macos -target aarch64-macos",
+        "CMAKE_CXX_FLAGS": "-target x86_64-macos -target aarch64-macos",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "win64",
+      "configurePreset": "win64"
+    },
+    {
+      "name": "linux64",
+      "configurePreset": "linux64"
+    },
+    {
+      "name": "linux-arm64",
+      "configurePreset": "linux-arm64"
+    },
+    {
+      "name": "macos-universal",
+      "configurePreset": "macos-universal"
+    }
+  ]
+}
