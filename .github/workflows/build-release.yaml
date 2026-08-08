@@ -1,0 +1,103 @@
+name: Build-Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to create (e.g., 1.0.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'dry-run: true will skip publishing to GitHub Releases'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win64
+
+          - os: ubuntu-latest
+            target: linux64
+
+          - os: macos-latest
+            target: macos-universal
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Ninja & CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Execute Build Script
+        run: python build.py ${{ matrix.target }}
+
+      - name: Upload Binary Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: godot/addons/audio_metadata_extension/bin/*
+
+  # ------------------------------------------------------------------
+  # JOB 2: Assemble Binaries, Create Git Tag, & Publish Release
+  # ------------------------------------------------------------------
+  release:
+    name: Assemble Addon & Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download All Platform Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: Assemble Addon Binaries
+        run: |
+          mkdir -p godot/addons/audio_metadata_extension/bin
+          find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) -exec cp {} godot/addons/audio_metadata_extension/bin/ \;
+          echo "=== Verified Assembled Binaries ==="
+          ls -la godot/addons/audio_metadata_extension/bin/
+
+      - name: Create Release Zip Archive
+        run: |
+          cd godot
+          zip -r ../audio_metadata_extension_v${{ inputs.tag }}.zip addons/ project.godot
+          cd ..
+
+      - name: Create Git Tag in Repository
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ inputs.tag }}" -m "Release v${{ inputs.tag }}" || true
+          git push origin "v${{ inputs.tag }}" || true
+
+      - name: Publish GitHub Release
+        if: ${{ !inputs.dry_run }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ inputs.tag }}"
+          name: "Release v${{ inputs.tag }}"
+          files: audio_metadata_extension_v${{ inputs.tag }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
