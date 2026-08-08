@@ -12,6 +12,8 @@ on:
         required: false
         type: boolean
         default: false
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -26,6 +28,9 @@ jobs:
 
           - os: ubuntu-latest
             target: linux64
+
+          - os: ubuntu-latest
+            target: linux-arm64
 
           - os: macos-latest
             target: macos-universal
@@ -44,6 +49,12 @@ jobs:
       - name: Setup Ninja & CMake
         uses: lukka/get-cmake@latest
 
+      - name: Install ARM64 GNU Cross Toolchain
+        if: matrix.target == 'linux-arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
       - name: Execute Build Script
         run: python build.py ${{ matrix.target }}
 
@@ -53,9 +64,6 @@ jobs:
           name: binary-${{ matrix.target }}
           path: godot/addons/audio_metadata_extension/bin/*
 
-  # ------------------------------------------------------------------
-  # JOB 2: Assemble Binaries, Create Git Tag, & Publish Release
-  # ------------------------------------------------------------------
   release:
     name: Assemble Addon & Publish Release
     needs: build
