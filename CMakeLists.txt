@@ -8,10 +8,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/out/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-
 add_subdirectory(external)
 add_subdirectory(src)
 
@@ -25,8 +21,18 @@ add_custom_target(
 add_custom_target(
     godot-binding ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_SOURCE_DIR}/bin
+        ${PROJECT_SOURCE_DIR}/bin/godot
         ${PROJECT_SOURCE_DIR}/binding/godot/addons/audio_metadata_extension/bin
 )
-
 add_dependencies(godot-binding audio_metadata_extension-godot)
+
+add_custom_target(
+    native-binding ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_SOURCE_DIR}/bin/native
+        ${PROJECT_SOURCE_DIR}/binding/native/bin
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/include/audio_metadata_extension.h
+        ${PROJECT_SOURCE_DIR}/binding/native/include/audio_metadata_extension.h
+)
+add_dependencies(native-binding audio_metadata_extension-native)

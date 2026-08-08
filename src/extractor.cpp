@@ -1,11 +1,13 @@
-#include "extract_metadata.h"
+#include "extractor.h"
 #include "fileref.h"
 #include "tbytevector.h"
 #include "tbytevectorstream.h"
 #include "tpropertymap.h"
+#include <unordered_map>
 
 namespace Extension {
-auto extract_metadata(const char *byte, uint32_t size) -> TagLib::PropertyMap {
+auto extract_metadata(const char *byte, uint32_t size)
+    -> std::unordered_map<std::string, std::string> {
     if (!byte || size == 0)
         return {};
 
@@ -16,7 +18,12 @@ auto extract_metadata(const char *byte, uint32_t size) -> TagLib::PropertyMap {
     if (fr.isNull() || !fr.file())
         return {};
 
-    return fr.properties();
+    std::unordered_map<std::string, std::string> result{};
+
+    for (const auto &[k, v] : fr.properties())
+        result.insert({k.toCString(true), v.toString(", ").toCString(true)});
+
+    return std::move(result);
 }
 
 auto extract_audio_properties(const char *byte, uint32_t size)
@@ -63,8 +70,12 @@ auto extract_image(const char *byte, uint32_t size) -> ImageData {
     if (!map.contains("data"))
         return {};
 
-    return {map["data"].toByteVector(), map.contains("mimeType")
-                                            ? map["mimeType"].toString()
-                                            : TagLib::String("image/jpeg")};
+    auto bv = map["data"].toByteVector();
+    std::vector<uint8_t> bytes(bv.data(), bv.data() + bv.size());
+    std::string mime = map.contains("mimeType")
+                           ? map["mimeType"].toString().toCString(true)
+                           : "image/jpeg";
+
+    return {std::move(bytes), std::move(mime)};
 }
 } // namespace Extension

@@ -11,14 +11,12 @@
 #define EXPORT
 #define IMPORT
 #pragma warning Unknown dynamic link import / export semantics.
-
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 #ifdef __cplusplus
-
 auto EXPORT initialize_library(::GDExtensionInterfaceGetProcAddress,
                                const ::GDExtensionClassLibraryPtr,
                                ::GDExtensionInitialization *)

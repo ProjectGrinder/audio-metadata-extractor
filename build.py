@@ -26,9 +26,7 @@ try:
             build_target(t)
     else:
         build_target(target)
-    print(
-        "==> All requested builds finished! Binaries placed in",
-        "binding/godot/addons/audio_metadata_extension/bin/")
+    print("==> All requested builds finished!")
 except subprocess.CalledProcessError as e:
     print(f"==> Build failed on step: {e.cmd}")
     sys.exit(1)

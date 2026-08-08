@@ -12,6 +12,7 @@ on:
         required: false
         type: boolean
         default: false
+
 permissions:
   contents: write
 
@@ -58,14 +59,17 @@ jobs:
       - name: Execute Build Script
         run: python build.py ${{ matrix.target }}
 
-      - name: Upload Binary Artifacts
+      - name: Upload Binary Artifacts (Godot & Native)
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target }}
-          path: godot/addons/audio_metadata_extension/bin/*
+          path: |
+            binding/godot/addons/audio_metadata_extension/bin/*
+            binding/native/bin/*
+            godot/addons/audio_metadata_extension/bin/*
 
   release:
-    name: Assemble Addon & Publish Release
+    name: Assemble Addons & Publish Release
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -77,17 +81,33 @@ jobs:
         with:
           path: downloaded-artifacts
 
-      - name: Assemble Addon Binaries
+      - name: Assemble Godot GDExtension Package
         run: |
-          mkdir -p godot/addons/audio_metadata_extension/bin
-          find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) -exec cp {} godot/addons/audio_metadata_extension/bin/ \;
-          echo "=== Verified Assembled Binaries ==="
-          ls -la godot/addons/audio_metadata_extension/bin/
+          mkdir -p binding/godot/addons/audio_metadata_extension/bin
+          find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) -exec cp {} binding/godot/addons/audio_metadata_extension/bin/ \;
+          
+          # Create Godot release ZIP
+          cd binding/godot
+          zip -r ../../audio_metadata_extension_godot_v${{ inputs.tag }}.zip addons/
+          cd ../..
 
-      - name: Create Release Zip Archive
+      - name: Assemble Native FFI C-ABI Package
         run: |
-          cd godot
-          zip -r ../audio_metadata_extension_v${{ inputs.tag }}.zip addons/ project.godot
+          mkdir -p native_release/bin
+          mkdir -p native_release/include
+          
+          # Copy all platform shared libraries into bin/
+          find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) -exec cp {} native_release/bin/ \;
+          
+          # Copy public C header into include/
+          cp src/native/audio_metadata_extension.h native_release/include/ 2>/dev/null || cp binding/native/include/audio_metadata_extension.h native_release/include/
+          
+          echo "=== Native Bundle Structure ==="
+          ls -R native_release/
+          
+          # Create Native C-ABI release ZIP
+          cd native_release
+          zip -r ../audio_metadata_extension_native_v${{ inputs.tag }}.zip bin/ include/
           cd ..
 
       - name: Create Git Tag in Repository
@@ -104,7 +124,9 @@ jobs:
         with:
           tag_name: "v${{ inputs.tag }}"
           name: "Release v${{ inputs.tag }}"
-          files: audio_metadata_extension_v${{ inputs.tag }}.zip
+          files: |
+            audio_metadata_extension_godot_v${{ inputs.tag }}.zip
+            audio_metadata_extension_native_v${{ inputs.tag }}.zip
           draft: false
           prerelease: false
         env:

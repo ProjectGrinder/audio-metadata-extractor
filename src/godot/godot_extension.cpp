@@ -1,5 +1,5 @@
-#include "extension.h"
-#include "extract_metadata.h"
+#include "godot_extension.h"
+#include "../extractor.h"
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/variant/string.hpp"
 #include <godot_cpp/classes/ref_counted.hpp>
@@ -33,8 +33,8 @@ auto AudioMetadataExtension::extract_metadata(const PackedByteArray &buffer)
 
     Dictionary dict = {};
     for (const auto &[k, v] : res) {
-        auto info = String::utf8(k.toCString(true));
-        auto value = String::utf8(v.toString(", ").toCString(true));
+        auto info = String::utf8(k.c_str());
+        auto value = String::utf8(v.c_str());
 
         dict.set(info, value);
     }
@@ -47,7 +47,7 @@ auto AudioMetadataExtension::extract_audio_properties(
     auto res = Extension::extract_audio_properties(
         reinterpret_cast<const char *>(buffer.ptr()), buffer.size());
 
-    Dictionary dict = {};
+    Dictionary dict{};
     dict["DURATION"] = res.duration;
     dict["BITRATE"] = res.bitrate;
     dict["SAMPLE_RATE"] = res.sample_rate;
@@ -60,16 +60,16 @@ auto AudioMetadataExtension::extract_image(const PackedByteArray &buffer)
     auto res = Extension::extract_image(
         reinterpret_cast<const char *>(buffer.ptr()), buffer.size());
 
-    if (res.data.isEmpty())
+    if (res.data.empty())
         return {};
 
-    Dictionary dict = {};
-    PackedByteArray cover_bytes;
+    Dictionary dict{};
+    PackedByteArray cover_bytes{};
     cover_bytes.resize(res.data.size());
     memcpy(cover_bytes.ptrw(), res.data.data(), res.data.size());
 
     dict["IMAGE_DATA"] = cover_bytes;
-    dict["MIME"] = String::utf8(res.mime.toCString(true));
+    dict["MIME"] = String::utf8(res.mime.c_str());
     return dict;
 }
 } // namespace godot

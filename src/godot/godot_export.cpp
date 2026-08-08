@@ -1,8 +1,8 @@
 #include "godot_export.h"
-#include "extension.h"
 #include "gdextension_interface.h"
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/godot.hpp"
+#include "godot_extension.h"
 
 auto initialize_extension(godot::ModuleInitializationLevel level) -> void {
     if (level != godot::MODULE_INITIALIZATION_LEVEL_SCENE)
