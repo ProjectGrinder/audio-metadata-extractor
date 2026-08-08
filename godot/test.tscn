@@ -4,3 +4,7 @@
 
 [node name="Test" type="Node2D" unique_id=1783237556]
 script = ExtResource("1_37kl0")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=627537143]
+offset_right = 121.0
+offset_bottom = 121.0

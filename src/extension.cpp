@@ -12,6 +12,15 @@ auto AudioMetadataExtension::_bind_methods() -> void {
     ClassDB::bind_static_method("AudioMetadataExtension",
                                 D_METHOD("extract_metadata", "buffer"),
                                 &AudioMetadataExtension::extract_metadata);
+
+    ClassDB::bind_static_method(
+        "AudioMetadataExtension",
+        D_METHOD("extract_audio_properties", "buffer"),
+        &AudioMetadataExtension::extract_audio_properties);
+
+    ClassDB::bind_static_method("AudioMetadataExtension",
+                                D_METHOD("extract_image", "buffer"),
+                                &AudioMetadataExtension::extract_image);
 }
 
 AudioMetadataExtension::AudioMetadataExtension() {}
@@ -19,18 +28,48 @@ AudioMetadataExtension::~AudioMetadataExtension() {}
 
 auto AudioMetadataExtension::extract_metadata(const PackedByteArray &buffer)
     -> Dictionary {
-
-    auto properties = Extension::extract_metadata(
+    auto res = Extension::extract_metadata(
         reinterpret_cast<const char *>(buffer.ptr()), buffer.size());
 
-    Dictionary result = {};
-    for (const auto &[k, v] : properties) {
-        String info{k.toCString(false)};
-        String value{v.toString(", ").toCString(false)};
+    Dictionary dict = {};
+    for (const auto &[k, v] : res) {
+        auto info = String::utf8(k.toCString(true));
+        auto value = String::utf8(v.toString(", ").toCString(true));
 
-        result.set(info, value);
+        dict.set(info, value);
     }
 
-    return result;
+    return dict;
+}
+
+auto AudioMetadataExtension::extract_audio_properties(
+    const PackedByteArray &buffer) -> Dictionary {
+    auto res = Extension::extract_audio_properties(
+        reinterpret_cast<const char *>(buffer.ptr()), buffer.size());
+
+    Dictionary dict = {};
+    dict["DURATION"] = res.duration;
+    dict["BITRATE"] = res.bitrate;
+    dict["SAMPLE_RATE"] = res.sample_rate;
+    dict["CHANNELS"] = res.channels;
+    return dict;
+}
+
+auto AudioMetadataExtension::extract_image(const PackedByteArray &buffer)
+    -> Dictionary {
+    auto res = Extension::extract_image(
+        reinterpret_cast<const char *>(buffer.ptr()), buffer.size());
+
+    if (res.data.isEmpty())
+        return {};
+
+    Dictionary dict = {};
+    PackedByteArray cover_bytes;
+    cover_bytes.resize(res.data.size());
+    memcpy(cover_bytes.ptrw(), res.data.data(), res.data.size());
+
+    dict["IMAGE_DATA"] = cover_bytes;
+    dict["MIME"] = String::utf8(res.mime.toCString(true));
+    return dict;
 }
 } // namespace godot

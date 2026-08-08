@@ -22,6 +22,9 @@ class AudioMetadataExtension : public RefCounted {
     ~AudioMetadataExtension();
 
     static auto extract_metadata(const PackedByteArray &buffer) -> Dictionary;
+    static auto extract_audio_properties(const PackedByteArray &buffer)
+        -> Dictionary;
+    static auto extract_image(const PackedByteArray &buffer) -> Dictionary;
 };
 } // namespace godot
 #endif
