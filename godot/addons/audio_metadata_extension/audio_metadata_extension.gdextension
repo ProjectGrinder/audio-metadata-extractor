@@ -1,12 +1,12 @@
 [configuration]
 
-entry_symbol = "audio_metadata_extension_entry"
+entry_symbol = "initialize_library"
 compatibility_minimum = "4.1"
 
 [libraries]
 
-windows.debug.x86_64 = "res://addons/audio_metadata_extension/bin/audio_metadata_extension.windows.dll"
-windows.release.x86_64 = "res://addons/audio_metadata_extension/bin/audio_metadata_extension.windows.dll"
+windows.debug.x86_64 = "res://addons/audio_metadata_extension/bin/audio_metadata_extension.windows.x86_64.dll"
+windows.release.x86_64 = "res://addons/audio_metadata_extension/bin/audio_metadata_extension.windows.x86_64.dll"
 
 linux.debug.x86_64 = "res://addons/audio_metadata_extension/bin/libaudio_metadata_extension.linux.x86_64.so"
 linux.release.x86_64 = "res://addons/audio_metadata_extension/bin/libaudio_metadata_extension.linux.x86_64.so"
