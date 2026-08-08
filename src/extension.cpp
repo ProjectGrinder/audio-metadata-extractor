@@ -9,8 +9,9 @@
 
 namespace godot {
 auto AudioMetadataExtension::_bind_methods() -> void {
-    ClassDB::bind_method(D_METHOD("extract_metadata", "buffer"),
-                         &AudioMetadataExtension::extract_metadata);
+    ClassDB::bind_static_method("AudioMetadataExtension",
+                                D_METHOD("extract_metadata", "buffer"),
+                                &AudioMetadataExtension::extract_metadata);
 }
 
 AudioMetadataExtension::AudioMetadataExtension() {}
@@ -24,8 +25,8 @@ auto AudioMetadataExtension::extract_metadata(const PackedByteArray &buffer)
 
     Dictionary result = {};
     for (const auto &[k, v] : properties) {
-        String info{k.toCString(true)};
-        String value{v.toString(", ").toCString(true)};
+        String info{k.toCString(false)};
+        String value{v.toString(", ").toCString(false)};
 
         result.set(info, value);
     }

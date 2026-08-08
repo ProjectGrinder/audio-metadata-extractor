@@ -28,7 +28,7 @@ target_include_directories(audio_metadata_extension PRIVATE
 
 if(WIN32)
     set_target_properties(audio_metadata_extension PROPERTIES
-        OUTPUT_NAME "audio_metadata_extension.windows${CMAKE_SYSTEM_PROCESSOR}"
+        OUTPUT_NAME "audio_metadata_extension.windows.x86_64"
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")

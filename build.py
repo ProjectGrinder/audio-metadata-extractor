@@ -9,13 +9,16 @@ targets = ["win64", "linux64", "linux-arm64"]
 if platform.system() == "Darwin":
     targets.append("macos-universal")
 
+
 def build_target(preset):
-    print(f"\033[0;36m========================================\033[0m")
-    print(f"\033[0;36mBuilding Target Preset: {preset}\033[0m")
-    print(f"\033[0;36m========================================\033[0m")
-    
+    print(R"========================================")
+    print(f"Building Target Preset: {preset}")
+    print("========================================")
+
     subprocess.run(["cmake", "--preset", preset], check=True)
-    subprocess.run(["cmake", "--build", "--preset", preset, "--parallel"], check=True)
+    subprocess.run(["cmake", "--build", "--preset",
+                   preset, "--parallel"], check=True)
+
 
 try:
     if target == "all":
@@ -23,7 +26,9 @@ try:
             build_target(t)
     else:
         build_target(target)
-    print("\033[0;32m==> All requested builds finished! Binaries placed in project/bin/\033[0m")
+    print(
+        "==> All requested builds finished! Binaries placed in",
+        "godot/addons/audio_metadata_extension/bin/")
 except subprocess.CalledProcessError as e:
-    print(f"\033[0;31m==> Build failed on step: {e.cmd}\033[0m")
+    print(f"==> Build failed on step: {e.cmd}")
     sys.exit(1)
