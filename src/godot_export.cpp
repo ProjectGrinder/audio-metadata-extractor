@@ -1,4 +1,4 @@
-#include "export.h"
+#include "godot_export.h"
 #include "extension.h"
 #include "gdextension_interface.h"
 #include "godot_cpp/core/class_db.hpp"

@@ -23,10 +23,10 @@ add_custom_target(
 )
 
 add_custom_target(
-    copy-binary ALL
+    godot-binding ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${PROJECT_SOURCE_DIR}/bin
-        ${PROJECT_SOURCE_DIR}/godot/addons/audio_metadata_extension/bin
+        ${PROJECT_SOURCE_DIR}/binding/godot/addons/audio_metadata_extension/bin
 )
 
-add_dependencies(copy-binary audio_metadata_extension)
+add_dependencies(godot-binding audio_metadata_extension-godot)
