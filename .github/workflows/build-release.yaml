@@ -121,8 +121,8 @@ jobs:
             mkdir -p native_release/bin
             mkdir -p native_release/include
             
-            # Find all bin/native folders from downloaded platform artifacts and copy them cleanly
-            find downloaded-artifacts/ -type d -path "*/bin/native" | while read native_dir; do
+            # Find all native output directories (matching downloaded-artifacts/*/native or downloaded-artifacts/*/*/native)
+            find downloaded-artifacts/ -type d -name "native" | while read native_dir; do
               cp -r "$native_dir"/* native_release/bin/ 2>/dev/null || true
             done
 
