@@ -1,0 +1,21 @@
+﻿{
+  "name": "com.takayama.audiometadataextension",
+  "version": "1.0.0",
+  "displayName": "Audio Metadata Extension",
+  "description": "High-performance native C-ABI wrapper and zero-copy RAII bindings for reading audio properties and ID3/Vorbis metadata tags in Unity.",
+  "unity": "2021.3",
+  "author": {
+    "name": "Takayama",
+    "url": "https://github.com/ProjectGrinder"
+  },
+  "keywords": [
+    "audio",
+    "metadata",
+    "id3",
+    "vorbis",
+    "native",
+    "plugin",
+    "p-invoke"
+  ],
+  "licensesUrl": "https://github.com/ProjectGrinder/audio-metadata-extractor/blob/main/LICENSE.md"
+}

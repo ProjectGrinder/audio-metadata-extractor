@@ -17,6 +17,9 @@ permissions:
   contents: write
 
 jobs:
+  # =========================================================================
+  # STAGE 1: BUILD MATRIX (PARALLEL WORKERS)
+  # =========================================================================
   build:
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -59,17 +62,20 @@ jobs:
       - name: Execute Build Script
         run: python build.py ${{ matrix.target }}
 
-      - name: Upload Binary Artifacts (Godot & Native)
+      - name: Upload Binary Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target }}
           path: |
             binding/godot/addons/audio_metadata_extension/bin/*
             binding/native/bin/*
-            godot/addons/audio_metadata_extension/bin/*
+            binding/unity/Runtime/Plugins/*
 
-  release:
-    name: Assemble Addons & Publish Release
+  # =========================================================================
+  # STAGE 2: PACK PARALLEL JOBS
+  # =========================================================================
+  pack-godot:
+    name: Pack Godot GDExtension
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -81,34 +87,124 @@ jobs:
         with:
           path: downloaded-artifacts
 
-      - name: Assemble Godot GDExtension Package
+      - name: Assemble Godot Package
         run: |
           mkdir -p binding/godot/addons/audio_metadata_extension/bin
           find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) -exec cp {} binding/godot/addons/audio_metadata_extension/bin/ \;
           
-          # Create Godot release ZIP
           cd binding/godot
           zip -r ../../audio_metadata_extension_godot_v${{ inputs.tag }}.zip addons/
           cd ../..
 
-      - name: Assemble Native FFI C-ABI Package
+      - name: Upload Godot Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-godot
+          path: audio_metadata_extension_godot_v${{ inputs.tag }}.zip
+
+  pack-native:
+    name: Pack Native C-ABI FFI
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download All Platform Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: Assemble Native Package
         run: |
           mkdir -p native_release/bin
           mkdir -p native_release/include
           
-          # Copy all platform shared libraries into bin/
           find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) -exec cp {} native_release/bin/ \;
+          cp include/audio_metadata_extension.h native_release/include/ 2>/dev/null || cp binding/native/include/audio_metadata_extension.h native_release/include/
           
-          # Copy public C header into include/
-          cp src/native/audio_metadata_extension.h native_release/include/ 2>/dev/null || cp binding/native/include/audio_metadata_extension.h native_release/include/
-          
-          echo "=== Native Bundle Structure ==="
-          ls -R native_release/
-          
-          # Create Native C-ABI release ZIP
           cd native_release
           zip -r ../audio_metadata_extension_native_v${{ inputs.tag }}.zip bin/ include/
           cd ..
+
+      - name: Upload Native Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-native
+          path: audio_metadata_extension_native_v${{ inputs.tag }}.zip
+
+  pack-unity:
+    name: Pack Unity UPM (.tgz)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download All Platform Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: Assemble Unity UPM Package
+        run: |
+          mkdir -p binding/unity/Runtime/Plugins/Windows/x86_64
+          mkdir -p binding/unity/Runtime/Plugins/Linux/x86_64
+          mkdir -p binding/unity/Runtime/Plugins/Linux/arm64
+          mkdir -p binding/unity/Runtime/Plugins/macOS
+
+          find downloaded-artifacts/binary-win64/ -type f -name "*.dll" -exec cp {} binding/unity/Runtime/Plugins/Windows/x86_64/ \; 2>/dev/null || true
+          find downloaded-artifacts/binary-linux64/ -type f -name "*.so" -exec cp {} binding/unity/Runtime/Plugins/Linux/x86_64/ \; 2>/dev/null || true
+          find downloaded-artifacts/binary-linux-arm64/ -type f -name "*.so" -exec cp {} binding/unity/Runtime/Plugins/Linux/arm64/ \; 2>/dev/null || true
+          find downloaded-artifacts/binary-macos-universal/ -type f -name "*.dylib" -exec cp {} binding/unity/Runtime/Plugins/macOS/ \; 2>/dev/null || true
+
+          cp -f LICENSE.md binding/unity/LICENSE.md 2>/dev/null || cp -f LICENSE binding/unity/LICENSE 2>/dev/null || true
+          cp -f README.md binding/unity/README.md 2>/dev/null || true
+
+          # Sync release tag into package.json
+          jq '.version = "${{ inputs.tag }}"' binding/unity/package.json > binding/unity/package.json.tmp && mv binding/unity/package.json.tmp binding/unity/package.json
+
+          cd binding/unity
+          npm pack
+          mv com.takayama.audiometadataextension-*.tgz ../../com.takayama.audiometadataextension-v${{ inputs.tag }}.tgz
+          cd ../..
+
+      - name: Upload Unity UPM Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-unity
+          path: com.takayama.audiometadataextension-v${{ inputs.tag }}.tgz
+
+  # =========================================================================
+  # STAGE 3: PUBLISH RELEASE TO GITHUB
+  # =========================================================================
+  release:
+    name: Publish GitHub Release
+    needs: [pack-godot, pack-native, pack-unity]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Godot Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: archive-godot
+
+      - name: Download Native Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: archive-native
+
+      - name: Download Unity Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: archive-unity
 
       - name: Create Git Tag in Repository
         if: ${{ !inputs.dry_run }}
@@ -127,6 +223,7 @@ jobs:
           files: |
             audio_metadata_extension_godot_v${{ inputs.tag }}.zip
             audio_metadata_extension_native_v${{ inputs.tag }}.zip
+            com.takayama.audiometadataextension-v${{ inputs.tag }}.tgz
           draft: false
           prerelease: false
         env:

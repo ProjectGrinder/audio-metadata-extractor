@@ -23,6 +23,12 @@ add_custom_target(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${PROJECT_SOURCE_DIR}/bin/godot
         ${PROJECT_SOURCE_DIR}/binding/godot/addons/audio_metadata_extension/bin
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/LICENSE.md
+        ${PROJECT_SOURCE_DIR}/binding/godot/addons/audio_metadata_extension/LICENSE.md
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/README.md
+        ${PROJECT_SOURCE_DIR}/binding/godot/addons/audio_metadata_extension/README.md
 )
 add_dependencies(godot-binding audio_metadata_extension-godot)
 
@@ -34,5 +40,25 @@ add_custom_target(
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${PROJECT_SOURCE_DIR}/include/audio_metadata_extension.h
         ${PROJECT_SOURCE_DIR}/binding/native/include/audio_metadata_extension.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/LICENSE.md
+        ${PROJECT_SOURCE_DIR}/binding/native/LICENSE.md
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/README.md
+        ${PROJECT_SOURCE_DIR}/binding/native/README.md
 )
 add_dependencies(native-binding audio_metadata_extension-native)
+
+add_custom_target(
+    unity-binding ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_SOURCE_DIR}/bin/native
+        ${PROJECT_SOURCE_DIR}/binding/unity/Runtime/Plugins
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/LICENSE.md
+        ${PROJECT_SOURCE_DIR}/binding/unity/LICENSE.md
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/README.md
+        ${PROJECT_SOURCE_DIR}/binding/unity/README.md
+)
+add_dependencies(unity-binding audio_metadata_extension-native)
