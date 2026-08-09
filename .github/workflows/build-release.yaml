@@ -104,43 +104,40 @@ jobs:
           path: audio_metadata_extension_godot_v${{ inputs.tag }}.zip
 
   pack-native:
-    name: Pack Native C-ABI FFI
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      name: Pack Native C-ABI FFI
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v4
 
-      - name: Download All Platform Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: downloaded-artifacts
+        - name: Download All Platform Artifacts
+          uses: actions/download-artifact@v4
+          with:
+            path: downloaded-artifacts
 
-      - name: Assemble Native Package
-        run: |
-          mkdir -p native_release/bin
-          mkdir -p native_release/include
-          
-          # STRICT SEARCH: Copy ONLY from bin/native/<OS>/<ARCH>/ outputs!
-          find downloaded-artifacts/ -type f \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) | while read file; do
-            if [[ "$file" =~ native/(Windows|Linux|macOS)/?([^/]*) ]]; then
-              plat_path="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
-              mkdir -p "native_release/bin/$plat_path"
-              cp "$file" "native_release/bin/$plat_path/"
-            fi
-          done
+        - name: Assemble Native Package
+          run: |
+            mkdir -p native_release/bin
+            mkdir -p native_release/include
+            
+            # Find all bin/native folders from downloaded platform artifacts and copy them cleanly
+            find downloaded-artifacts/ -type d -path "*/bin/native" | while read native_dir; do
+              cp -r "$native_dir"/* native_release/bin/ 2>/dev/null || true
+            done
 
-          cp include/audio_metadata_extension.h native_release/include/ 2>/dev/null || cp binding/native/include/audio_metadata_extension.h native_release/include/
-          
-          cd native_release
-          zip -r ../audio_metadata_extension_native_v${{ inputs.tag }}.zip bin/ include/
-          cd ..
+            # Copy header file
+            cp include/audio_metadata_extension.h native_release/include/ 2>/dev/null || cp binding/native/include/audio_metadata_extension.h native_release/include/ 2>/dev/null || true
+            
+            cd native_release
+            zip -r ../audio_metadata_extension_native_v${{ inputs.tag }}.zip bin/ include/
+            cd ..
 
-      - name: Upload Native Archive
-        uses: actions/upload-artifact@v4
-        with:
-          name: archive-native
-          path: audio_metadata_extension_native_v${{ inputs.tag }}.zip
+        - name: Upload Native Archive
+          uses: actions/upload-artifact@v4
+          with:
+            name: archive-native
+            path: audio_metadata_extension_native_v${{ inputs.tag }}.zip
 
   pack-unity:
     name: Pack Unity UPM (.tgz)
