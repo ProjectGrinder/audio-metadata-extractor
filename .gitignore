@@ -1112,3 +1112,7 @@ out/
 .cache/
 
 !binding/unity/**/*.meta
+!bin/native/**
+!bin/godot/**
+!**/arm64/
+!**/arm64/**
